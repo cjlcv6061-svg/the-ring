@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>奇環．編輯器</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+
+  :root{
+    --ink:#2a2520;
+    --ink-soft:#5a5248;
+    --paper:#faf6ef;
+    --paper-card:#fffdf9;
+    --accent:#8a5a3f;
+    --accent-deep:#6b4530;
+    --rule:#ddd2bf;
+    --gold:#b08d57;
+    --ok:#4a7a4a;
+    --err:#a14a3a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Noto Sans TC",sans-serif;
+    line-height:1.7;
+  }
+  .wrap{max-width:880px;margin:0 auto;padding:28px 20px 80px;}
+
+  h1{
+    font-family:"Noto Serif TC",serif;
+    font-size:1.4rem;color:var(--accent-deep);
+    margin:0 0 4px;letter-spacing:.06em;
+  }
+  .sub{
+    font-size:.78rem;color:var(--ink-soft);
+    margin:0 0 24px;letter-spacing:.04em;
+  }
+
+  .card{
+    background:var(--paper-card);
+    border:1px solid var(--rule);
+    border-radius:8px;
+    padding:20px 22px;
+    margin-bottom:18px;
+    box-shadow:0 1px 3px rgba(0,0,0,.03);
+  }
+
+  label{
+    display:block;
+    font-size:.78rem;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+    letter-spacing:.04em;
+  }
+
+  input[type=text], input[type=password]{
+    width:100%;
+    font-family:"Noto Sans TC",monospace;
+    font-size:.85rem;
+    padding:10px 12px;
+    border:1px solid var(--rule);
+    border-radius:6px;
+    background:#fff;
+    color:var(--ink);
+  }
+  input:focus{ outline:2px solid var(--gold); outline-offset:1px; }
+
+  .row{ display:flex; gap:12px; flex-wrap:wrap; }
+  .row > div{ flex:1; min-width:160px; }
+  .row button{ padding:10px 14px; }
+
+  .hint{
+    font-size:.74rem;
+    color:var(--ink-soft);
+    margin-top:8px;
+    line-height:1.6;
+  }
+  .hint a{ color:var(--accent-deep); }
+
+  select{
+    width:100%;
+    font-family:"Noto Sans TC",sans-serif;
+    font-size:.9rem;
+    padding:10px 12px;
+    border:1px solid var(--rule);
+    border-radius:6px;
+    background:#fff;
+    color:var(--ink);
+  }
+
+  textarea{
+    width:100%;
+    min-height:55vh;
+    font-family:"Noto Serif TC",serif;
+    font-size:1rem;
+    line-height:1.9;
+    padding:16px;
+    border:1px solid var(--rule);
+    border-radius:6px;
+    background:#fff;
+    color:var(--ink);
+    resize:vertical;
+  }
+  textarea:focus{ outline:2px solid var(--gold); outline-offset:1px; }
+
+  .toolbar{
+    display:flex; gap:10px; flex-wrap:wrap;
+    margin:14px 0;
+    align-items:center;
+  }
+  button{
+    font-family:"Noto Sans TC",sans-serif;
+    font-size:.85rem;font-weight:600;
+    padding:10px 20px;
+    border-radius:999px;
+    border:1px solid var(--rule);
+    background:var(--paper-card);
+    color:var(--accent-deep);
+    cursor:pointer;
+    letter-spacing:.04em;
+  }
+  button:hover{ border-color:var(--gold); background:#fff; }
+  button:disabled{ color:var(--rule); cursor:default; }
+  button.primary{
+    background:var(--accent-deep);
+    color:#fff;
+    border-color:var(--accent-deep);
+  }
+  button.primary:hover{ background:var(--accent); }
+  button.primary:disabled{
+    background:var(--rule); border-color:var(--rule); color:#fff;
+  }
+
+  .status{
+    font-size:.8rem;
+    padding:10px 14px;
+    border-radius:6px;
+    margin-top:6px;
+    display:none;
+  }
+  .status.show{ display:block; }
+  .status.ok{ background:#eaf3ea; color:var(--ok); border:1px solid #cfe4cf; }
+  .status.err{ background:#f5e9e6; color:var(--err); border:1px solid #e4cdc7; }
+  .status.busy{ background:#f3efe6; color:var(--ink-soft); border:1px solid var(--rule); }
+
+  .meta{
+    font-size:.74rem; color:var(--ink-soft);
+    margin-top:4px;
+  }
+
+  .titlefields{ margin-bottom:14px; }
+
+  .badge{
+    display:inline-block;
+    font-size:.68rem;
+    padding:2px 8px;
+    border-radius:999px;
+    background:var(--gold);
+    color:#fff;
+    letter-spacing:.05em;
+    margin-left:8px;
+    vertical-align:middle;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>奇環．編輯器 <span class="badge">本機限定</span></h1>
+  <p class="sub">直接在瀏覽器編輯內容，存檔即推送回 GitHub repo，網站約 30 秒後自動更新。</p>
+
+  <div class="card" id="authCard">
+    <label for="repoInput">GitHub repo（格式：使用者名稱/repo名稱）</label>
+    <input type="text" id="repoInput" placeholder="例如：johndoe/qihuan-site">
+    <div class="row" style="margin-top:12px;">
+      <div>
+        <label for="branchInput">分支</label>
+        <input type="text" id="branchInput" value="main">
+      </div>
+      <div>
+        <label for="tokenInput">GitHub Personal Access Token</label>
+        <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxx">
+      </div>
+    </div>
+    <div class="hint">
+      Token 只會存在你目前這台瀏覽器（localStorage），不會上傳到任何地方，也不會被我看到。
+      若還沒申請，到 GitHub →
+      <a href="https://github.com/settings/tokens?type=beta" target="_blank">Settings → Developer settings → Fine-grained tokens</a>
+      建立一個，只要勾選這個 repo 的 <strong>Contents: Read and write</strong> 權限即可。
+    </div>
+    <div class="toolbar">
+      <button class="primary" id="connectBtn">連接並載入內容</button>
+      <button id="forgetBtn">清除已存的 Token</button>
+    </div>
+    <div class="status" id="authStatus"></div>
+  </div>
+
+  <div class="card" id="editCard" style="display:none;">
+    <label for="epSelect">選擇集數</label>
+    <div class="row" style="align-items:flex-end;">
+      <div style="flex:3;">
+        <select id="epSelect"></select>
+      </div>
+      <div style="flex:0; display:flex; gap:6px;">
+        <button id="moveUpBtn" title="上移一位">↑</button>
+        <button id="moveDownBtn" title="下移一位">↓</button>
+        <button id="deleteBtn" title="刪除這一集">刪除</button>
+      </div>
+    </div>
+
+    <div class="toolbar" style="margin-top:10px;">
+      <button id="addBtn">＋ 新增一集</button>
+    </div>
+
+    <div class="titlefields" style="margin-top:14px;">
+      <div class="row">
+        <div>
+          <label for="epNoInput">集數標籤（例如：第一集）</label>
+          <input type="text" id="epNoInput">
+        </div>
+        <div>
+          <label for="epNameInput">集名</label>
+          <input type="text" id="epNameInput">
+        </div>
+      </div>
+    </div>
+
+    <label for="bodyTextarea">內文（一行一段；單獨一行打 --- 代表場景分隔線；**文字** 會顯示為粗體）</label>
+    <textarea id="bodyTextarea" spellcheck="false"></textarea>
+
+    <div class="toolbar">
+      <button class="primary" id="saveBtn">存檔並推送到 GitHub</button>
+      <button id="reloadBtn">捨棄變更，重新載入</button>
+      <span class="meta" id="charCount"></span>
+    </div>
+    <div class="status" id="saveStatus"></div>
+  </div>
+
+</div>
+
+<script>
+const STORAGE_KEYS = {
+  repo: 'ring-editor-repo',
+  branch: 'ring-editor-branch',
+  token: 'ring-editor-token',
+};
+
+const repoInput = document.getElementById('repoInput');
+const branchInput = document.getElementById('branchInput');
+const tokenInput = document.getElementById('tokenInput');
+const connectBtn = document.getElementById('connectBtn');
+const forgetBtn = document.getElementById('forgetBtn');
+const authStatus = document.getElementById('authStatus');
+
+const editCard = document.getElementById('editCard');
+const epSelect = document.getElementById('epSelect');
+const epNoInput = document.getElementById('epNoInput');
+const epNameInput = document.getElementById('epNameInput');
+const bodyTextarea = document.getElementById('bodyTextarea');
+const saveBtn = document.getElementById('saveBtn');
+const reloadBtn = document.getElementById('reloadBtn');
+const saveStatus = document.getElementById('saveStatus');
+const charCount = document.getElementById('charCount');
+const addBtn = document.getElementById('addBtn');
+const deleteBtn = document.getElementById('deleteBtn');
+const moveUpBtn = document.getElementById('moveUpBtn');
+const moveDownBtn = document.getElementById('moveDownBtn');
+
+let episodes = [];
+let currentSha = null;   // GitHub blob sha for episodes.json, needed to update
+let currentIndex = 0;
+
+function setStatus(el, type, msg){
+  el.className = 'status show ' + type;
+  el.textContent = msg;
+}
+function clearStatus(el){
+  el.className = 'status';
+  el.textContent = '';
+}
+
+// ---------- persisted connection fields ----------
+function loadSavedAuth(){
+  repoInput.value = localStorage.getItem(STORAGE_KEYS.repo) || '';
+  branchInput.value = localStorage.getItem(STORAGE_KEYS.branch) || 'main';
+  tokenInput.value = localStorage.getItem(STORAGE_KEYS.token) || '';
+}
+function saveAuth(){
+  localStorage.setItem(STORAGE_KEYS.repo, repoInput.value.trim());
+  localStorage.setItem(STORAGE_KEYS.branch, branchInput.value.trim() || 'main');
+  localStorage.setItem(STORAGE_KEYS.token, tokenInput.value.trim());
+}
+forgetBtn.onclick = () => {
+  localStorage.removeItem(STORAGE_KEYS.repo);
+  localStorage.removeItem(STORAGE_KEYS.branch);
+  localStorage.removeItem(STORAGE_KEYS.token);
+  repoInput.value = '';
+  branchInput.value = 'main';
+  tokenInput.value = '';
+  setStatus(authStatus, 'ok', '已清除本機儲存的連線資訊。');
+};
+loadSavedAuth();
+
+function apiHeaders(){
+  return {
+    'Authorization': 'Bearer ' + tokenInput.value.trim(),
+    'Accept': 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+  };
+}
+
+function repoPath(){
+  return repoInput.value.trim().replace(/^\/+|\/+$/g, '');
+}
+
+async function fetchEpisodesJson(){
+  const repo = repoPath();
+  const branch = branchInput.value.trim() || 'main';
+  const url = `https://api.github.com/repos/${repo}/contents/episodes.json?ref=${encodeURIComponent(branch)}`;
+  const res = await fetch(url, { headers: apiHeaders() });
+  if (!res.ok){
+    const body = await res.text();
+    throw new Error(`讀取失敗（${res.status}）：${body.slice(0,200)}`);
+  }
+  const data = await res.json();
+  currentSha = data.sha;
+  const content = decodeURIComponent(escape(atob(data.content.replace(/\n/g,''))));
+  return JSON.parse(content);
+}
+
+async function pushEpisodesJson(newEpisodes, message){
+  const repo = repoPath();
+  const branch = branchInput.value.trim() || 'main';
+  const url = `https://api.github.com/repos/${repo}/contents/episodes.json`;
+  const jsonStr = JSON.stringify(newEpisodes, null, 2);
+  const b64 = btoa(unescape(encodeURIComponent(jsonStr)));
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: { ...apiHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message: message || '更新內容',
+      content: b64,
+      sha: currentSha,
+      branch: branch,
+    }),
+  });
+  if (!res.ok){
+    const body = await res.text();
+    throw new Error(`存檔失敗（${res.status}）：${body.slice(0,300)}`);
+  }
+  const data = await res.json();
+  currentSha = data.content.sha;
+}
+
+// ---------- connect ----------
+connectBtn.onclick = async () => {
+  if (!repoInput.value.trim() || !tokenInput.value.trim()){
+    setStatus(authStatus, 'err', '請填入 repo 與 Token。');
+    return;
+  }
+  saveAuth();
+  setStatus(authStatus, 'busy', '連接中…');
+  connectBtn.disabled = true;
+  try {
+    episodes = await fetchEpisodesJson();
+    setStatus(authStatus, 'ok', `連接成功，已載入 ${episodes.length} 集。`);
+    buildEpSelect();
+    editCard.style.display = 'block';
+    loadEpisodeIntoForm(0);
+  } catch (err){
+    setStatus(authStatus, 'err', err.message);
+    editCard.style.display = 'none';
+  } finally {
+    connectBtn.disabled = false;
+  }
+};
+
+function buildEpSelect(){
+  epSelect.innerHTML = '';
+  episodes.forEach((ep, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = ep.no + '．' + ep.name;
+    epSelect.appendChild(opt);
+  });
+  updateMoveButtons();
+}
+
+function syncFormToMemory(){
+  if (episodes.length === 0) return;
+  episodes[currentIndex] = {
+    no: epNoInput.value.trim(),
+    name: epNameInput.value.trim(),
+    raw: bodyTextarea.value,
+  };
+}
+
+function loadEpisodeIntoForm(i){
+  currentIndex = i;
+  const ep = episodes[i];
+  epSelect.value = i;
+  epNoInput.value = ep.no;
+  epNameInput.value = ep.name;
+  bodyTextarea.value = ep.raw;
+  updateCharCount();
+  clearStatus(saveStatus);
+  updateMoveButtons();
+}
+
+function updateMoveButtons(){
+  moveUpBtn.disabled = (currentIndex === 0);
+  moveDownBtn.disabled = (currentIndex === episodes.length - 1);
+  deleteBtn.disabled = (episodes.length <= 1);
+}
+
+epSelect.onchange = () => {
+  syncFormToMemory();
+  loadEpisodeIntoForm(parseInt(epSelect.value, 10));
+};
+
+bodyTextarea.addEventListener('input', updateCharCount);
+function updateCharCount(){
+  charCount.textContent = bodyTextarea.value.length + ' 字元';
+}
+
+reloadBtn.onclick = () => {
+  if (confirm('確定要捨棄目前的變更，重新載入這一集嗎？')){
+    loadEpisodeIntoForm(currentIndex);
+  }
+};
+
+// ---------- add / delete / reorder ----------
+function defaultEpisodeLabel(n){
+  const cnNums = ['一','二','三','四','五','六','七','八','九','十',
+    '十一','十二','十三','十四','十五','十六','十七','十八','十九','二十'];
+  if (n >= 1 && n <= cnNums.length){
+    return '第' + cnNums[n-1] + '集';
+  }
+  return '第' + n + '集';
+}
+
+addBtn.onclick = () => {
+  syncFormToMemory();
+  const newEp = {
+    no: defaultEpisodeLabel(episodes.length + 1),
+    name: '未命名',
+    raw: '',
+  };
+  episodes.push(newEp);
+  buildEpSelect();
+  loadEpisodeIntoForm(episodes.length - 1);
+  setStatus(saveStatus, 'busy', '已新增一集（尚未存檔）。填好標題與內文後記得按「存檔並推送到 GitHub」。');
+};
+
+deleteBtn.onclick = () => {
+  if (episodes.length <= 1){
+    alert('至少要保留一集。');
+    return;
+  }
+  const ep = episodes[currentIndex];
+  if (!confirm(`確定要刪除「${ep.no}．${ep.name}」嗎？這個動作要按存檔才會真的生效。`)){
+    return;
+  }
+  episodes.splice(currentIndex, 1);
+  buildEpSelect();
+  const nextIndex = Math.min(currentIndex, episodes.length - 1);
+  loadEpisodeIntoForm(nextIndex);
+  setStatus(saveStatus, 'busy', '已從列表移除（尚未存檔）。按「存檔並推送到 GitHub」才會真的刪除。');
+};
+
+moveUpBtn.onclick = () => {
+  if (currentIndex === 0) return;
+  syncFormToMemory();
+  [episodes[currentIndex - 1], episodes[currentIndex]] = [episodes[currentIndex], episodes[currentIndex - 1]];
+  buildEpSelect();
+  loadEpisodeIntoForm(currentIndex - 1);
+  setStatus(saveStatus, 'busy', '順序已調整（尚未存檔）。');
+};
+
+moveDownBtn.onclick = () => {
+  if (currentIndex === episodes.length - 1) return;
+  syncFormToMemory();
+  [episodes[currentIndex + 1], episodes[currentIndex]] = [episodes[currentIndex], episodes[currentIndex + 1]];
+  buildEpSelect();
+  loadEpisodeIntoForm(currentIndex + 1);
+  setStatus(saveStatus, 'busy', '順序已調整（尚未存檔）。');
+};
+
+saveBtn.onclick = async () => {
+  syncFormToMemory();
+
+  // basic validation
+  const emptyTitles = episodes.some(ep => !ep.no.trim() || !ep.name.trim());
+  if (emptyTitles){
+    setStatus(saveStatus, 'err', '有集數的「集數標籤」或「集名」是空白的，請補上再存檔。');
+    return;
+  }
+
+  saveBtn.disabled = true;
+  setStatus(saveStatus, 'busy', '推送到 GitHub 中…');
+  try {
+    const label = episodes[currentIndex].no + '．' + episodes[currentIndex].name;
+    await pushEpisodesJson(episodes, `編輯：${label}`);
+    setStatus(saveStatus, 'ok', '已存檔並推送成功！GitHub Pages 約需 30 秒到 1 分鐘重新部署。');
+    buildEpSelect();
+    epSelect.value = currentIndex;
+  } catch (err){
+    setStatus(saveStatus, 'err', err.message);
+  } finally {
+    saveBtn.disabled = false;
+  }
+};
+</script>
+</body>
+</html>

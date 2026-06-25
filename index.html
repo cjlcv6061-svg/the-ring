@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>《奇環／THE RING》閱讀器</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+
+  :root{
+    --ink:#2a2520;
+    --ink-soft:#5a5248;
+    --paper:#faf6ef;
+    --paper-card:#fffdf9;
+    --accent:#8a5a3f;
+    --accent-deep:#6b4530;
+    --rule:#ddd2bf;
+    --gold:#b08d57;
+    --body-size:17px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 20% 10%, rgba(176,141,87,.06), transparent 40%),
+      radial-gradient(circle at 80% 90%, rgba(138,90,63,.06), transparent 40%),
+      var(--paper);
+    color:var(--ink);
+    font-family:"Noto Serif TC","Songti TC",serif;
+    line-height:1.9;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  header{
+    position:sticky;top:0;z-index:30;
+    background:rgba(250,246,239,.92);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--rule);
+  }
+  .bar{
+    max-width:780px;margin:0 auto;
+    padding:16px 22px 12px;
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  }
+  .ring-mark{
+    width:30px;height:30px;flex:0 0 auto;
+    border-radius:50%;
+    border:2px solid var(--gold);
+    position:relative;
+    background:conic-gradient(from 0deg, rgba(176,141,87,.15), rgba(138,90,63,.35), rgba(176,141,87,.15));
+  }
+  .ring-mark::after{
+    content:"";position:absolute;inset:5px;
+    border-radius:50%;border:1px solid rgba(176,141,87,.5);
+  }
+  .title-zh{
+    font-size:1.28rem;font-weight:700;letter-spacing:.06em;
+    color:var(--accent-deep);
+  }
+  .title-en{
+    font-family:"Noto Sans TC",sans-serif;
+    font-size:.62rem;letter-spacing:.32em;text-transform:uppercase;
+    color:var(--ink-soft);
+  }
+
+  .font-ctrl{
+    display:flex;align-items:center;gap:2px;
+    margin-left:auto;
+  }
+  .font-ctrl button{
+    font-family:"Noto Sans TC",sans-serif;
+    font-size:.78rem;font-weight:700;
+    width:30px;height:30px;
+    border-radius:999px;cursor:pointer;
+    background:var(--paper-card);color:var(--accent-deep);
+    border:1px solid var(--rule);
+    transition:all .15s ease;
+    display:flex;align-items:center;justify-content:center;
+    line-height:1;
+  }
+  .font-ctrl button:hover{border-color:var(--gold);background:#fff;}
+  .font-ctrl button:active{transform:scale(.92);}
+  .font-ctrl .fc-label{
+    font-family:"Noto Sans TC",sans-serif;
+    font-size:.66rem;letter-spacing:.08em;
+    color:var(--ink-soft);
+    width:34px;text-align:center;
+    user-select:none;
+  }
+
+  nav.toc{
+    max-width:780px;margin:0 auto;
+    padding:0 16px 14px;
+    display:flex;gap:8px;overflow-x:auto;
+    scrollbar-width:thin;
+  }
+  nav.toc button{
+    flex:0 0 auto;
+    font-family:"Noto Sans TC",sans-serif;
+    font-size:.82rem;font-weight:600;letter-spacing:.04em;
+    padding:9px 18px;border-radius:999px;cursor:pointer;
+    background:var(--paper-card);color:var(--accent-deep);
+    border:1px solid var(--rule);
+    transition:all .16s ease;
+    white-space:nowrap;
+  }
+  nav.toc button:hover{border-color:var(--gold);background:#fff;}
+  nav.toc button.active{
+    background:var(--accent-deep);color:#fff;border-color:var(--accent-deep);
+  }
+
+  .wrap{max-width:780px;margin:0 auto;padding:0 20px 100px;}
+
+  .loading{
+    text-align:center;padding:80px 20px;
+    color:var(--ink-soft);
+    font-family:"Noto Sans TC",sans-serif;
+    font-size:.85rem;letter-spacing:.1em;
+  }
+
+  article.episode{
+    background:var(--paper-card);
+    border:1px solid var(--rule);
+    border-radius:6px;
+    padding:40px 6vw 52px;
+    margin-top:28px;
+    box-shadow:0 1px 3px rgba(0,0,0,.03), 0 8px 24px rgba(60,45,30,.04);
+  }
+
+  .ep-label{
+    font-family:"Noto Sans TC",sans-serif;
+    font-size:.72rem;letter-spacing:.3em;
+    color:var(--gold);text-align:center;margin-bottom:8px;
+  }
+  article.episode h2{
+    font-size:1.5rem;text-align:center;margin:0 0 6px;
+    color:var(--ink);font-weight:600;letter-spacing:.08em;
+  }
+  .ep-ornament{
+    text-align:center;color:var(--gold);
+    letter-spacing:.4em;font-size:.74rem;margin:12px 0 32px;
+  }
+  article.episode p{
+    margin:0 0 1.35em;font-size:var(--body-size);color:var(--ink);
+    text-align:justify;text-justify:inter-character;
+    transition:font-size .15s ease;
+  }
+  article.episode p strong{
+    font-weight:600;
+    color:var(--accent-deep);
+  }
+  .scene-break{
+    text-align:center;color:var(--gold);
+    letter-spacing:.5em;margin:2.2em 0;font-size:.8rem;
+    user-select:none;
+  }
+  .ep-end{
+    text-align:center;margin-top:36px;
+    font-family:"Noto Sans TC",sans-serif;
+    font-size:.74rem;letter-spacing:.3em;color:var(--ink-soft);
+  }
+
+  .pager{
+    display:flex;justify-content:space-between;align-items:center;
+    gap:12px;margin-top:24px;
+  }
+  .pager button{
+    font-family:"Noto Sans TC",sans-serif;font-size:.8rem;
+    color:var(--accent-deep);background:var(--paper-card);
+    border:1px solid var(--rule);padding:10px 18px;border-radius:999px;
+    cursor:pointer;letter-spacing:.04em;
+    max-width:46%;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .pager button:hover{border-color:var(--gold);background:#fff;}
+  .pager button:disabled{
+    color:var(--rule);border-color:var(--rule);background:transparent;
+    cursor:default;
+  }
+  .pager .spacer{flex:1;}
+
+  footer{
+    text-align:center;font-family:"Noto Sans TC",sans-serif;
+    font-size:.72rem;color:var(--ink-soft);letter-spacing:.08em;
+    padding:30px 0 0;
+  }
+  footer a{ color:var(--ink-soft); }
+
+  @media(max-width:600px){
+    .title-zh{font-size:1.08rem;}
+    article.episode{padding:30px 5vw 40px;}
+    .ep-ornament{font-size:.7rem;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <div class="ring-mark"></div>
+    <div>
+      <div class="title-zh">奇環 <span style="font-weight:400;color:var(--ink-soft);">THE RING</span></div>
+      <div class="title-en">EPISODE READER</div>
+    </div>
+    <div class="font-ctrl">
+      <button id="fcMinus" title="縮小字體">A−</button>
+      <span class="fc-label" id="fcLabel">17px</span>
+      <button id="fcPlus" title="放大字體">A+</button>
+    </div>
+  </div>
+  <nav class="toc" id="epNav"></nav>
+</header>
+
+<div class="wrap" id="wrap">
+  <div class="loading" id="loading">讀取中…</div>
+</div>
+
+<script>
+let EPISODES = [];
+let current = 0;
+
+const nav = document.getElementById('epNav');
+const wrap = document.getElementById('wrap');
+
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Convert raw editable text (paragraphs separated by newlines, --- for scene
+// breaks, **bold** inline) into rendered HTML.
+function renderBody(raw){
+  const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const parts = [];
+  for (const line of lines){
+    if (line === '---'){
+      parts.push('<div class="scene-break">⁂</div>');
+      continue;
+    }
+    const inline = escapeHtml(line).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    parts.push('<p>' + inline + '</p>');
+  }
+  return parts.join('\n');
+}
+
+function buildNav(){
+  nav.innerHTML = '';
+  EPISODES.forEach((ep, i) => {
+    const b = document.createElement('button');
+    b.textContent = ep.no + '．' + ep.name;
+    b.onclick = () => selectEpisode(i);
+    nav.appendChild(b);
+  });
+}
+
+function selectEpisode(i){
+  current = i;
+  const ep = EPISODES[i];
+  [...nav.children].forEach((b, k) => b.classList.toggle('active', k === i));
+
+  wrap.innerHTML = `
+    <article class="episode" id="epContainer">
+      <div class="ep-label">EPISODE ${i + 1}</div>
+      <h2>${ep.no}．${ep.name}</h2>
+      <div class="ep-ornament">⸻</div>
+      <div id="epBody">${renderBody(ep.raw)}</div>
+      <div class="ep-end">（${ep.no}完）</div>
+    </article>
+    <div class="pager">
+      <button id="prevBtn">${i === 0 ? '← 上一集' : '← ' + EPISODES[i-1].no + '．' + EPISODES[i-1].name}</button>
+      <span class="spacer"></span>
+      <button id="nextBtn">${i === EPISODES.length - 1 ? '下一集 →' : EPISODES[i+1].no + '．' + EPISODES[i+1].name + ' →'}</button>
+    </div>
+    <footer>《奇環／THE RING》卷一　·　僅供作者個人創作存檔使用</footer>
+  `;
+
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  prevBtn.disabled = (i === 0);
+  nextBtn.disabled = (i === EPISODES.length - 1);
+  prevBtn.onclick = () => { if (current > 0) selectEpisode(current - 1); };
+  nextBtn.onclick = () => { if (current < EPISODES.length - 1) selectEpisode(current + 1); };
+
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+/* ---------- font size control ---------- */
+const FONT_MIN = 14, FONT_MAX = 24, FONT_STEP = 1;
+let fontSize = 17;
+const fcLabel = document.getElementById('fcLabel');
+const fcMinus = document.getElementById('fcMinus');
+const fcPlus = document.getElementById('fcPlus');
+
+function applyFontSize(){
+  document.documentElement.style.setProperty('--body-size', fontSize + 'px');
+  fcLabel.textContent = fontSize + 'px';
+  fcMinus.disabled = fontSize <= FONT_MIN;
+  fcPlus.disabled = fontSize >= FONT_MAX;
+  try { localStorage.setItem('ring-font-size', String(fontSize)); } catch(e) {}
+}
+fcMinus.onclick = () => { fontSize = Math.max(FONT_MIN, fontSize - FONT_STEP); applyFontSize(); };
+fcPlus.onclick = () => { fontSize = Math.min(FONT_MAX, fontSize + FONT_STEP); applyFontSize(); };
+try {
+  const saved = localStorage.getItem('ring-font-size');
+  if (saved) {
+    const n = parseInt(saved, 10);
+    if (!isNaN(n) && n >= FONT_MIN && n <= FONT_MAX) fontSize = n;
+  }
+} catch(e) {}
+applyFontSize();
+
+/* ---------- load data ---------- */
+fetch('episodes.json?_=' + Date.now())
+  .then(r => {
+    if (!r.ok) throw new Error('無法讀取 episodes.json');
+    return r.json();
+  })
+  .then(data => {
+    EPISODES = data;
+    buildNav();
+    selectEpisode(0);
+  })
+  .catch(err => {
+    wrap.innerHTML = '<div class="loading">讀取內容失敗：' + escapeHtml(err.message) + '</div>';
+  });
+</script>
+</body>
+</html>
